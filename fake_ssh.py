@@ -8,6 +8,7 @@ import os
 import traceback
 import paramiko
 import json
+from getmac import get_mac_address
 
 import email_alerts
 
@@ -98,8 +99,10 @@ class FakeSshServer(paramiko.ServerInterface):
 
 def handle_connection(client, addr):
     """Handle a new ssh connection"""
-    msg = "Connection from: " + addr[0]
-    LOG.write("\n\nConnection from: " + addr[0] + "\n")
+    ip = str(addr[0])
+    mac = get_mac_address(ip=str(addr[0]))
+    msg = "Connection from ip: "+ip+" mac: "+mac
+    LOG.write("\n\n"+msg+"\n")#Connection from: " + addr[0] + "\n")
     print('Got a connection!')
     a=load_auth_file("/usr/local/bin/email.json")
     try:
