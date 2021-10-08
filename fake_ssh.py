@@ -4,11 +4,20 @@ import argparse
 import threading
 import socket
 import sys
+import os
 import traceback
 import paramiko
+import json
 
-LOG = open("logs/log.txt", "a")
-HOST_KEY = paramiko.RSAKey(filename='keys/private.key')
+import email_alerts
+
+def load_auth_file(filename):
+    with open(filename, "r") as auth_file:
+        auth = json.load(auth_file)
+        return auth
+
+LOG = open("/usr/local/bin/fake-ssh/logs/log.txt", "a")
+HOST_KEY = paramiko.RSAKey(filename='/usr/local/bin/fake-ssh/keys/private.key')
 SSH_BANNER = "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.1"
 
 
@@ -89,8 +98,15 @@ class FakeSshServer(paramiko.ServerInterface):
 
 def handle_connection(client, addr):
     """Handle a new ssh connection"""
+    msg = "Connection from: " + addr[0]
     LOG.write("\n\nConnection from: " + addr[0] + "\n")
     print('Got a connection!')
+    a=load_auth_file("/usr/local/bin/email.json")
+    try:
+        email_alerts.send(auth=a,to="tosteveayers@outlook.com",subject="ALERT! SSH Connection attempt to fake-ssh on port 22 from: " + addr[0],message=msg)
+        print("Sent email")
+    except:
+        print("unable to send alert")
     try:
         transport = paramiko.Transport(client)
         transport.add_server_key(HOST_KEY)
