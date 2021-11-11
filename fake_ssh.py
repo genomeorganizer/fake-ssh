@@ -9,7 +9,9 @@ import traceback
 import paramiko
 import json
 from getmac import get_mac_address
-
+from os.path import expanduser
+home = expanduser("~")
+default_path=os.path.join(home,".mail")
 import email_alerts
 
 def load_auth_file(filename):
@@ -104,7 +106,8 @@ def handle_connection(client, addr):
     msg = "Connection from ip: "+ip+" mac: "+mac
     LOG.write("\n\n"+msg+"\n")#Connection from: " + addr[0] + "\n")
     print('Got a connection!')
-    a=load_auth_file("/usr/local/bin/email.json")
+    #a=load_auth_file("/usr/local/bin/email.json")
+    a=default_path
     try:
         email_alerts.send(auth=a,to="tosteveayers@outlook.com",subject="ALERT! SSH Connection attempt to fake-ssh on port 22 from: " + addr[0],message=msg)
         print("Sent email")
