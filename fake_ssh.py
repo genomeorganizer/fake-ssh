@@ -20,46 +20,50 @@ def load_auth_file(filename):
 LOG = open("/usr/local/bin/fake-ssh/logs/log.txt", "a")
 HOST_KEY = paramiko.RSAKey(filename='/usr/local/bin/fake-ssh/keys/private.key')
 SSH_BANNER = "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.1"
+MOTD="""###############################################################
+#                                                   Welcome to Ubuntu Server 20.0.1                                                             # 
+#                                    All connections are monitored and recorded                                       #
+#                           Disconnect IMMEDIATELY if you are not an authorized user!                  #
+###############################################################
 
+"""
+PROMPT="~ $"
 
 def handle_cmd(cmd, chan):
-    """Branching statements to handle and prepare a response for a command"""
-    response = ""
-    if cmd.startswith("sudo"):
-        send_ascii("sudo.txt", chan)
-        return
-    elif cmd.startswith("ls"):
-        response = "pw.txt"
-    elif cmd.startswith("version"):
-        response = "Super Amazing Awesome (tm) Shell v1.1"
-    elif cmd.startswith("pwd"):
-        response = "/home/clippy"
-    elif cmd.startswith("cd"):
-        send_ascii("cd.txt", chan)
-        return
-    elif cmd.startswith("cat"):
-        send_ascii("cat.txt", chan)
-        return
-    elif cmd.startswith("rm"):
-        send_ascii("bomb.txt", chan)
-        response = "You blew up our files! How could you???"
-    elif cmd.startswith("whoami"):
-        send_ascii("wizard.txt", chan)
-        response = "You are a wizard of the internet!"
-    elif ".exe" in cmd:
-        response = "Hmm, trying to access .exe files from an ssh terminal..... Your methods are unconventional"
-    elif cmd.startswith("cmd"):
-        response = "Command Prompt? We only use respectable shells on this machine.... Sorry"
-    elif cmd == "help":
-        send_ascii("help.txt", chan)
-        return
-    else:
-        send_ascii("clippy.txt", chan)
-        response = "Use the 'help' command to view available commands"
-
+    try:
+        """Branching statements to handle and prepare a response for a command"""
+        response = ""
+        if cmd.startswith("sudo"):
+            send_ascii("sudo.txt", chan)
+            return
+        elif cmd.startswith("ls"):
+            response = "Desktop Documents Downloads Music Pictures Public Templates"
+        elif("version" in cmd):
+            response = """GNU bash, version 3.1.57(1)-release (x86_64)
+    Copyright (C) 2007 Free Software Foundation, Inc."""
+        elif cmd.startswith("pwd"):
+            response = "/home/clippy"
+        elif cmd.startswith("cd"):
+            send_ascii("cd.txt", chan)
+            return
+        elif cmd.startswith("cat"):
+            send_ascii("cat.txt", chan)
+            return
+        elif cmd.startswith("rm"):
+            response = "rm: cannot remove '{}': No such file or directory".format(cmd.split(rm)[1])
+            return
+        elif cmd.startswith("whoami"):
+            send_ascii("wizard.txt", chan)
+            response = "You are a wizard of the internet!"
+            return
+        else:
+        response = "bash: {} command not found".format(cmd)
+    except:
+        response = "bash: {} command not found".format(cmd)
     LOG.write(response + "\n")
     LOG.flush()
     chan.send(response + "\r\n")
+
 
 
 def send_ascii(filename, chan):
@@ -107,9 +111,10 @@ def handle_connection(client, addr):
     a=load_auth_file("/usr/local/bin/email.json")
     try:
         email_alerts.send(auth=a,to="tosteveayers@outlook.com",subject="ALERT! SSH Connection attempt to fake-ssh on port 22 from: " + addr[0],message=msg)
-        print("Sent email")
+        # print("Sent email")
     except:
-        print("unable to send alert")
+        # print("unable to send alert")
+        exit(0)
     try:
         transport = paramiko.Transport(client)
         transport.add_server_key(HOST_KEY)
@@ -133,10 +138,10 @@ def handle_connection(client, addr):
             raise Exception("No shell request")
 
         try:
-            chan.send("Welcome to the my control server\r\n\r\n")
+            chan.send(MOTD)
             run = True
             while run:
-                chan.send("$ ")
+                chan.send(PROMPT)
                 command = ""
                 while not command.endswith("\r"):
                     transport = chan.recv(1024)
